@@ -22,6 +22,7 @@ io.on("connection", socket => {
     });
 
     cb({ userId: socket.id });
+    io.to(data.room).emit("updateUsers", users.getByRoom(data.room));
     socket.emit("newMessage", m("admin", `Hello, ${data.name}.`));
     socket.broadcast
       .to(data.room)
@@ -39,6 +40,23 @@ io.on("connection", socket => {
     }
 
     cb();
+  });
+
+  socket.on("userLeft", (id, cb) => {
+    const user = users.remove(id);
+    if (user) {
+      io.to(user.room).emit("updateUsers", users.getByRoom(user.room));
+      io.to(user.room).emit("newMessage", m("admin", `User ${user.name} left`));
+    }
+    cb();
+  });
+
+  socket.on("disconnect", (id, cb) => {
+    const user = users.remove(socket.id);
+    if (user) {
+      io.to(user.room).emit("updateUsers", users.getByRoom(user.room));
+      io.to(user.room).emit("newMessage", m("admin", `User ${user.name} left`));
+    }
   });
 });
 
